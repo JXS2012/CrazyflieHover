@@ -26,11 +26,13 @@
 #  MA  02110-1301, USA.
 
 """
-Simple example that connects to the first Crazyflie found, logs the Stabilizer
-and prints it to the console. After 10s the application disconnects and exits.
+Simple example that builds upon the basiclog.py and ramp.py, demonstarte 
+how to build a feedback control loop that runs at 10 Hz for 5 seconds
+has to be run in the example folder just like the other examples
 """
 
 import sys
+#modify here to make the code runnable somewhere else
 sys.path.append("../lib")
 
 import cflib.crtp
@@ -99,13 +101,14 @@ class LogKeeper:
 	    result = result + str(item)
 	return result
 
-def feedbackControl(currentState)
+def feedbackControl(currentState):
+    #filling your own controller
     thrust = 23000
     pitch = 0
     roll = 0
     yawrate = 0
 
-    return controlInput(roll, pitch, yawrate, thrust)
+    return ControlInput(roll, pitch, yawrate, thrust)
 
 	
 class LoggingExample:
@@ -159,21 +162,21 @@ class LoggingExample:
         else:
             print("Could not add logconfig since some variables are not in TOC")
 
-        # Start a timer to disconnect in 10s
+        # Start a timer to disconnect in 5s
         t = Timer(5, self._cf.close_link)
         t.start()
 	
 	Thread(target=self._pid_z).start()
 
     def _pid_z(self):
-	while True:
+	while (self.is_connected):
 	    currentState = self._logKeeper.getItem()
 	    #add the feedback controller here
-	    #controlInput = feedbackControl(currentState)
-	    #send control cmd(controlInput.roll, controlInput.pitch, controlInput.yawrate, controlInput.thrust)
+	    controlInput = feedbackControl(currentState)
+	    self._cf.commander.send_setpoint(controlInput.roll, controlInput.pitch, controlInput.yawrate, controlInput.thrust)
             
 	    #sending a constant cmd
-	    self._cf.commander.send_setpoint(0, 0, 0, 20000)
+	    #self._cf.commander.send_setpoint(0, 0, 0, 20000)
 	    #defines the control frequency, can be set to time.sleep(0.01), which is 100 Hz
             time.sleep(0.1)
 
